@@ -1,0 +1,229 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Python Revision Bank</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: one focused question card, a slim progress header, and a 100-cell map to jump between questions */
+:root{
+  --bg:#f3f5f8; --surface:#ffffff; --ink:#18212f; --muted:#5d6878; --line:#d9dfe7;
+  --accent:#1f5fa8; --accent-soft:#e3edf8; --code-bg:#eef1f5;
+  --ok:#1d7a46; --ok-soft:#e2f3e8; --bad:#b4342d; --bad-soft:#fbe7e5;
+  --sans:"IBM Plex Sans Arabic",system-ui,-apple-system,"Segoe UI",Tahoma,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#11161e; --surface:#19202b; --ink:#e6eaf0; --muted:#97a2b2; --line:#2b3442;
+  --accent:#6aa6ea; --accent-soft:#1c2b40; --code-bg:#0e131a;
+  --ok:#5cc58a; --ok-soft:#163324; --bad:#f07a71; --bad-soft:#3a1d1b; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#11161e; --surface:#19202b; --ink:#e6eaf0; --muted:#97a2b2; --line:#2b3442;
+  --accent:#6aa6ea; --accent-soft:#1c2b40; --code-bg:#0e131a;
+  --ok:#5cc58a; --ok-soft:#163324; --bad:#f07a71; --bad-soft:#3a1d1b; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:16px;line-height:1.55}
+.wrap{max-width:760px;margin:0 auto;padding-block:24px 48px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:grid;gap:18px}
+header{display:grid;gap:12px}
+h1{font-size:1.6rem;margin:0;text-wrap:balance;letter-spacing:-.01em}
+.sub{margin:0;color:var(--muted);font-size:.95rem}
+.sub span[dir=rtl]{display:block}
+.stats{display:flex;flex-wrap:wrap;gap:8px 18px;align-items:center;font-size:.9rem;color:var(--muted);font-variant-numeric:tabular-nums}
+.stats b{color:var(--ink)}
+.bar{height:6px;background:var(--line);border-radius:3px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--accent);width:0;transition:width .25s}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{font:inherit;font-size:.82rem;padding:5px 11px;border-radius:999px;border:1px solid var(--line);background:var(--surface);color:var(--ink);cursor:pointer}
+.chip[aria-pressed=true]{background:var(--accent);border-color:var(--accent);color:var(--surface)}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:22px;display:grid;gap:16px;min-width:0}
+.meta{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;font-size:.8rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.meta .topic{color:var(--accent);font-weight:600}
+.q{font-size:1.15rem;font-weight:600;margin:0}
+pre{margin:0;background:var(--code-bg);border:1px solid var(--line);border-radius:8px;padding:14px 16px;overflow-x:auto;font-family:var(--mono);font-size:.92rem;line-height:1.5}
+.opts{display:grid;gap:8px}
+.opt{display:flex;gap:12px;align-items:center;text-align:left;font:inherit;width:100%;padding:11px 14px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink);cursor:pointer;min-width:0}
+.opt:hover:not(:disabled){border-color:var(--accent);background:var(--accent-soft)}
+.opt:disabled{cursor:default}
+.opt .k{flex:none;width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font-size:.8rem;font-weight:700;background:var(--code-bg);color:var(--muted)}
+.opt .v{font-family:var(--mono);font-size:.95rem;overflow-wrap:anywhere}
+.opt.ok{border-color:var(--ok);background:var(--ok-soft)} .opt.ok .k{background:var(--ok);color:var(--surface)}
+.opt.bad{border-color:var(--bad);background:var(--bad-soft)} .opt.bad .k{background:var(--bad);color:var(--surface)}
+.fb{border-radius:8px;padding:14px 16px;font-size:1rem;line-height:1.8}
+.fb.ok{background:var(--ok-soft);border:1px solid var(--ok)} .fb.bad{background:var(--bad-soft);border:1px solid var(--bad)}
+.fb strong{display:block;margin-bottom:2px}
+.fb.ok strong{color:var(--ok)} .fb.bad strong{color:var(--bad)}
+.fb code{font-family:var(--mono);font-size:.88em;background:var(--code-bg);padding:1px 6px;border-radius:4px;unicode-bidi:isolate;white-space:nowrap}
+.nav{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.btn{font:inherit;font-weight:600;padding:9px 18px;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--ink);cursor:pointer}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--surface)}
+.btn:disabled{opacity:.4;cursor:default}
+button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.map h2{font-size:.8rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:0 0 8px;font-weight:600}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(34px,1fr));gap:5px}
+.cell{font:inherit;font-size:.75rem;font-variant-numeric:tabular-nums;height:30px;border-radius:5px;border:1px solid var(--line);background:var(--surface);color:var(--muted);cursor:pointer;padding:0}
+.cell.ok{background:var(--ok);border-color:var(--ok);color:var(--surface)}
+.cell.bad{background:var(--bad);border-color:var(--bad);color:var(--surface)}
+.cell.cur{outline:2px solid var(--accent);outline-offset:1px}
+.cell.dim{opacity:.25}
+.foot{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;font-size:.85rem;color:var(--muted)}
+.linkbtn{font:inherit;background:none;border:none;color:var(--accent);cursor:pointer;padding:4px 0;text-decoration:underline}
+@media (prefers-reduced-motion:reduce){.bar i{transition:none}}
+@media (max-width:480px){.card{padding:16px}}
+</style>
+
+<style>body{margin:0}</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Python Revision Bank</h1>
+    <p class="sub">100 practice questions on lectures 1–5. Choose an answer to check it.
+      <span dir="rtl">اختر إجابة لتعرف هل هي صحيحة، وسيظهر شرح بالعربية لكل سؤال.</span></p>
+    <div class="stats"><span>Answered <b id="sAns">0</b> / 100</span><span>Correct <b id="sOk">0</b></span><span>Score <b id="sPct">–</b></span></div>
+    <div class="bar" aria-hidden="true"><i id="bar"></i></div>
+    <div class="chips" id="chips" role="group" aria-label="Filter by topic"></div>
+  </header>
+
+  <section class="card" aria-live="polite">
+    <div class="meta"><span class="topic" id="topic"></span><span id="pos"></span></div>
+    <p class="q" id="q"></p>
+    <pre id="code"></pre>
+    <div class="opts" id="opts"></div>
+    <div class="fb" id="fb" dir="rtl" hidden></div>
+    <div class="nav">
+      <button class="btn" id="prev" type="button">← Previous</button>
+      <button class="btn primary" id="next" type="button">Next →</button>
+    </div>
+  </section>
+
+  <section class="map">
+    <h2>All questions</h2>
+    <div class="grid" id="grid"></div>
+  </section>
+
+  <div class="foot">
+    <span>Output printed on several lines is shown with spaces, for example <code>1 2 3</code>.</span>
+    <span id="resetBox"><button class="linkbtn" id="reset" type="button">Start over</button></span>
+  </div>
+</div>
+
+<script>
+const Q = [{"t": "Variables & Types", "q": "What is printed?", "c": "print(type(3.0))", "o": ["<class 'bool'>", "<class 'float'>", "<class 'int'>", "<class 'str'>"], "a": 1, "e": "الرقم <code dir=\"ltr\">3.0<\/code> يحتوي على فاصلة عشرية، لذلك نوعه <code dir=\"ltr\">float<\/code> حتى لو كان الجزء العشري صفراً."}, {"t": "Variables & Types", "q": "What is printed?", "c": "print(type(\"25\"))", "o": ["<class 'float'>", "<class 'str'>", "<class 'bool'>", "<class 'int'>"], "a": 1, "e": "أي قيمة بين علامتي تنصيص تعتبر نصاً <code dir=\"ltr\">str<\/code>، حتى لو كانت أرقاماً مثل <code dir=\"ltr\">\"25\"<\/code>."}, {"t": "Variables & Types", "q": "What is printed?", "c": "print(type(True))", "o": ["<class 'float'>", "<class 'int'>", "<class 'bool'>", "<class 'str'>"], "a": 2, "e": "القيمتان <code dir=\"ltr\">True<\/code> و <code dir=\"ltr\">False<\/code> من النوع المنطقي <code dir=\"ltr\">bool<\/code>."}, {"t": "Variables & Types", "q": "What is printed?", "c": "x = 5\nx = \"five\"\nprint(x)", "o": ["x", "Error", "5", "five"], "a": 3, "e": "في Python يمكن للمتغير أن يأخذ قيمة جديدة من نوع مختلف. آخر قيمة أُسندت إلى <code dir=\"ltr\">x<\/code> هي <code dir=\"ltr\">\"five\"<\/code>."}, {"t": "Variables & Types", "q": "Which of the following is NOT a valid variable name?", "c": "", "o": ["price2", "total_price", "_count", "2price"], "a": 3, "e": "لا يجوز أن يبدأ اسم المتغير برقم. الاسم <code dir=\"ltr\">2price<\/code> غير صالح، أما الشرطة السفلية والأرقام بعد الحرف الأول فمسموحة."}, {"t": "Variables & Types", "q": "Which of the following is a Python keyword and cannot be used as a variable name?", "c": "", "o": ["value", "name", "score", "while"], "a": 3, "e": "<code dir=\"ltr\">while<\/code> كلمة محجوزة في Python تُستخدم للحلقات، فلا يمكن استخدامها اسماً لمتغير."}, {"t": "Variables & Types", "q": "What is printed?", "c": "a = 4\nb = a\na = 10\nprint(b)", "o": ["10", "Error", "14", "4"], "a": 3, "e": "عند تنفيذ <code dir=\"ltr\">b = a<\/code> أخذ <code dir=\"ltr\">b<\/code> القيمة 4. تغيير <code dir=\"ltr\">a<\/code> بعد ذلك إلى 10 لا يغيّر قيمة <code dir=\"ltr\">b<\/code>."}, {"t": "Variables & Types", "q": "What is printed?", "c": "x = 3\ny = x * 2\nx = 10\nprint(y)", "o": ["10", "6", "3", "20"], "a": 1, "e": "تم حساب <code dir=\"ltr\">y<\/code> عندما كانت <code dir=\"ltr\">x<\/code> تساوي 3، فأصبحت <code dir=\"ltr\">y = 6<\/code>. تغيير <code dir=\"ltr\">x<\/code> لاحقاً لا يعيد حساب <code dir=\"ltr\">y<\/code>."}, {"t": "Variables & Types", "q": "Which line correctly stores the text Hello in a variable?", "c": "", "o": ["msg = \"Hello\"", "\"Hello\" = msg", "msg = Hello", "msg == \"Hello\""], "a": 0, "e": "النص يجب أن يكون بين علامتي تنصيص، واسم المتغير يكون على يسار علامة <code dir=\"ltr\">=<\/code>. أما <code dir=\"ltr\">==<\/code> فهي للمقارنة وليست للإسناد."}, {"t": "Variables & Types", "q": "What is printed?", "c": "total = 5\nTotal = 8\nprint(total + Total)", "o": ["8", "Error", "13", "5"], "a": 2, "e": "Python يفرّق بين الحروف الكبيرة والصغيرة، فـ <code dir=\"ltr\">total<\/code> و <code dir=\"ltr\">Total<\/code> متغيران مختلفان. الناتج 5 + 8 = 13."}, {"t": "Operators", "q": "What is printed?", "c": "print(17 % 5)", "o": ["12", "3", "2", "3.4"], "a": 2, "e": "العامل <code dir=\"ltr\">%<\/code> يعطي باقي القسمة. 17 ÷ 5 = 3 والباقي 2."}, {"t": "Operators", "q": "What is printed?", "c": "print(17 // 5)", "o": ["4", "2", "3", "3.4"], "a": 2, "e": "العامل <code dir=\"ltr\">//<\/code> يعطي ناتج القسمة الصحيح بدون الكسور. 17 ÷ 5 = 3.4، فيكون الناتج 3."}, {"t": "Operators", "q": "What is printed?", "c": "print(2 ** 3)", "o": ["5", "9", "6", "8"], "a": 3, "e": "العامل <code dir=\"ltr\">**<\/code> يعني الأس (القوة). <code dir=\"ltr\">2 ** 3<\/code> تعني 2 × 2 × 2 = 8."}, {"t": "Operators", "q": "What is printed?", "c": "print(10 - 2 * 3)", "o": ["4", "-4", "24", "16"], "a": 0, "e": "الضرب يُنفّذ قبل الطرح. أولاً 2 × 3 = 6، ثم 10 − 6 = 4."}, {"t": "Operators", "q": "What is printed?", "c": "print((10 - 2) * 3)", "o": ["4", "30", "16", "24"], "a": 3, "e": "الأقواس تُنفّذ أولاً. 10 − 2 = 8، ثم 8 × 3 = 24."}, {"t": "Operators", "q": "What is printed?", "c": "print(7 == 7.0)", "o": ["True", "False", "Error", "7"], "a": 0, "e": "العامل <code dir=\"ltr\">==<\/code> يقارن القيم. القيمة 7 تساوي 7.0 رياضياً، فالنتيجة <code dir=\"ltr\">True<\/code>."}, {"t": "Operators", "q": "What is printed?", "c": "print(5 != 5)", "o": ["True", "Error", "False", "0"], "a": 2, "e": "العامل <code dir=\"ltr\">!=<\/code> يعني «لا يساوي». بما أن 5 تساوي 5، فالنتيجة <code dir=\"ltr\">False<\/code>."}, {"t": "Operators", "q": "What is printed?", "c": "print(not 4 > 2)", "o": ["2", "True", "False", "4"], "a": 2, "e": "أولاً <code dir=\"ltr\">4 &gt; 2<\/code> تعطي <code dir=\"ltr\">True<\/code>، ثم <code dir=\"ltr\">not<\/code> تعكسها إلى <code dir=\"ltr\">False<\/code>."}, {"t": "Operators", "q": "What is printed?", "c": "print(3 > 1 or 2 > 5)", "o": ["None", "True", "Error", "False"], "a": 1, "e": "مع <code dir=\"ltr\">or<\/code> يكفي أن يكون أحد الشرطين صحيحاً. <code dir=\"ltr\">3 &gt; 1<\/code> صحيح، فالنتيجة <code dir=\"ltr\">True<\/code>."}, {"t": "Operators", "q": "What is printed?", "c": "x = 10\nx += 5\nx *= 2\nprint(x)", "o": ["25", "20", "30", "15"], "a": 2, "e": "<code dir=\"ltr\">x += 5<\/code> تجعل x = 15، ثم <code dir=\"ltr\">x *= 2<\/code> تجعلها 15 × 2 = 30."}, {"t": "Input & Conversion", "q": "What is printed?", "c": "print(\"3\" + \"4\")", "o": ["7", "3 + 4", "34", "Error"], "a": 2, "e": "العامل <code dir=\"ltr\">+<\/code> بين نصين يقوم بدمجهما وليس جمعهما. <code dir=\"ltr\">\"3\" + \"4\"<\/code> يعطي <code dir=\"ltr\">34<\/code>."}, {"t": "Input & Conversion", "q": "What is printed?", "c": "print(int(\"3\") + int(\"4\"))", "o": ["34", "7", "34.0", "Error"], "a": 1, "e": "الدالة <code dir=\"ltr\">int()<\/code> تحوّل النص إلى عدد صحيح، فيصبح الجمع رياضياً: 3 + 4 = 7."}, {"t": "Input & Conversion", "q": "What is printed?", "c": "print(float(\"2.5\") * 2)", "o": ["Error", "5.0", "2.52.5", "5"], "a": 1, "e": "<code dir=\"ltr\">float(\"2.5\")<\/code> تحوّل النص إلى العدد العشري 2.5، وضربه في 2 يعطي <code dir=\"ltr\">5.0<\/code> (يبقى النوع float)."}, {"t": "Input & Conversion", "q": "What is printed?", "c": "print(int(7.9))", "o": ["7.9", "8", "Error", "7"], "a": 3, "e": "الدالة <code dir=\"ltr\">int()<\/code> تحذف الجزء العشري ولا تقرّب. <code dir=\"ltr\">int(7.9)<\/code> تعطي 7."}, {"t": "Input & Conversion", "q": "What is printed?", "c": "print(\"5\" + 5)", "o": ["Error", "10", "55", "5 5"], "a": 0, "e": "لا يمكن جمع نص <code dir=\"ltr\">\"5\"<\/code> مع عدد صحيح 5، فيظهر خطأ <code dir=\"ltr\">TypeError<\/code>. يجب تحويل أحدهما أولاً."}, {"t": "Input & Conversion", "q": "The user types 20 when this code runs. What is the data type of age?", "c": "age = input(\"Enter age: \")", "o": ["bool", "float", "str", "int"], "a": 2, "e": "الدالة <code dir=\"ltr\">input()<\/code> تُرجع دائماً نصاً <code dir=\"ltr\">str<\/code> مهما كتب المستخدم. للحصول على رقم نستخدم <code dir=\"ltr\">int(input(...))<\/code>."}, {"t": "Input & Conversion", "q": "What is printed?", "c": "print(str(4) + str(4))", "o": ["8", "44", "16", "Error"], "a": 1, "e": "<code dir=\"ltr\">str(4)<\/code> تحوّل الرقم إلى النص <code dir=\"ltr\">\"4\"<\/code>، ودمج نصين يعطي <code dir=\"ltr\">44<\/code>."}, {"t": "Input & Conversion", "q": "What is printed?", "c": "print(int(\"hello\"))", "o": ["0", "hello", "Error", "None"], "a": 2, "e": "لا يمكن تحويل نص لا يحتوي على أرقام إلى عدد، فيظهر خطأ <code dir=\"ltr\">ValueError<\/code>."}, {"t": "Conditions", "q": "What is printed?", "c": "score = 75\nif score >= 90:\n    print(\"A\")\nelif score >= 70:\n    print(\"B\")\nelif score >= 50:\n    print(\"C\")\nelse:\n    print(\"F\")", "o": ["C", "B", "F", "A"], "a": 1, "e": "Python يفحص الشروط بالترتيب. <code dir=\"ltr\">75 &gt;= 90<\/code> خطأ، ثم <code dir=\"ltr\">75 &gt;= 70<\/code> صحيح، فيطبع B ويتوقف عن فحص باقي الشروط."}, {"t": "Conditions", "q": "What is printed?", "c": "x = 15\nif x > 10:\n    print(\"Big\")\nif x > 5:\n    print(\"Medium\")", "o": ["Medium", "Big", "Big Medium", "Nothing"], "a": 2, "e": "هذان شرطان <code dir=\"ltr\">if<\/code> منفصلان وليس <code dir=\"ltr\">elif<\/code>، لذلك يُفحص كل منهما. كلاهما صحيح فيُطبع Big ثم Medium."}, {"t": "Conditions", "q": "What is printed?", "c": "num = 8\nif num % 2 == 0:\n    print(\"Even\")\nelse:\n    print(\"Odd\")", "o": ["8", "Odd", "0", "Even"], "a": 3, "e": "باقي قسمة 8 على 2 هو 0، فالشرط صحيح ويُطبع Even."}, {"t": "Conditions", "q": "Which condition checks that x is between 1 and 10 (including 1 and 10)?", "c": "", "o": ["x >= 1 and x <= 10", "x > 1 and x < 10", "x >= 1 or x <= 10", "x == 1 and x == 10"], "a": 0, "e": "نحتاج الشرطين معاً، لذلك نستخدم <code dir=\"ltr\">and<\/code>. وعلامة <code dir=\"ltr\">&gt;=<\/code> و <code dir=\"ltr\">&lt;=<\/code> تشمل 1 و 10. أما <code dir=\"ltr\">or<\/code> فتقبل أي رقم تقريباً."}, {"t": "Conditions", "q": "What is printed?", "c": "a = 5\nb = 5\nif a > b:\n    print(\"a\")\nelif a < b:\n    print(\"b\")\nelse:\n    print(\"equal\")", "o": ["Error", "b", "a", "equal"], "a": 3, "e": "القيمتان متساويتان، فلا <code dir=\"ltr\">a &gt; b<\/code> ولا <code dir=\"ltr\">a &lt; b<\/code> صحيح، لذلك يُنفّذ <code dir=\"ltr\">else<\/code> ويُطبع equal."}, {"t": "Conditions", "q": "What is printed?", "c": "day = \"Fri\"\nif day == \"Fri\" or day == \"Sat\":\n    print(\"Weekend\")\nelse:\n    print(\"Workday\")", "o": ["Workday", "Error", "Weekend", "Fri"], "a": 2, "e": "الشرط الأول <code dir=\"ltr\">day == \"Fri\"<\/code> صحيح، ومع <code dir=\"ltr\">or<\/code> يكفي شرط واحد صحيح، فيُطبع Weekend."}, {"t": "Conditions", "q": "What is printed?", "c": "x = 3\nif x > 5:\n    print(\"A\")\nprint(\"B\")", "o": ["B", "A B", "A", "Nothing"], "a": 0, "e": "<code dir=\"ltr\">print(\"A\")<\/code> داخل <code dir=\"ltr\">if<\/code> لأنه مُزاح (indented)، والشرط خطأ فلا يُنفّذ. أما <code dir=\"ltr\">print(\"B\")<\/code> فخارج <code dir=\"ltr\">if<\/code> فيُنفّذ دائماً."}, {"t": "Conditions", "q": "Which line is written correctly in Python?", "c": "", "o": ["if x > 5:", "if x > 5;", "if x > 5", "if (x > 5) then:"], "a": 0, "e": "جملة <code dir=\"ltr\">if<\/code> يجب أن تنتهي بنقطتين <code dir=\"ltr\">:<\/code>، ولا تستخدم Python كلمة <code dir=\"ltr\">then<\/code> ولا الفاصلة المنقوطة."}, {"t": "Conditions", "q": "Which operator checks if two values are equal?", "c": "", "o": ["=", "!=", "==", "+="], "a": 2, "e": "<code dir=\"ltr\">==<\/code> للمقارنة والتحقق من التساوي، أما <code dir=\"ltr\">=<\/code> فهي لإسناد قيمة إلى متغير، و <code dir=\"ltr\">!=<\/code> تعني «لا يساوي»."}, {"t": "Conditions", "q": "What is printed?", "c": "temp = 40\nif temp > 30 and temp < 35:\n    print(\"Warm\")\nelif temp >= 35:\n    print(\"Very hot\")\nelse:\n    print(\"Normal\")", "o": ["Normal", "Very hot", "Warm Very hot", "Warm"], "a": 1, "e": "الشرط الأول خطأ لأن 40 ليست أقل من 35. الشرط الثاني <code dir=\"ltr\">40 &gt;= 35<\/code> صحيح، فيُطبع Very hot."}, {"t": "Conditions", "q": "What is printed?", "c": "x = 7\nif x > 5:\n    if x > 10:\n        print(\"A\")\n    else:\n        print(\"B\")", "o": ["A", "B", "A B", "Nothing"], "a": 1, "e": "الشرط الخارجي <code dir=\"ltr\">7 &gt; 5<\/code> صحيح فندخل. الشرط الداخلي <code dir=\"ltr\">7 &gt; 10<\/code> خطأ، فيُنفّذ <code dir=\"ltr\">else<\/code> الداخلي ويُطبع B."}, {"t": "Conditions", "q": "What is printed?", "c": "password = \"abc\"\nif password == \"ABC\":\n    print(\"OK\")\nelse:\n    print(\"Wrong\")", "o": ["OK", "Error", "abc", "Wrong"], "a": 3, "e": "المقارنة بين النصوص تفرّق بين الحروف الكبيرة والصغيرة، فـ <code dir=\"ltr\">\"abc\"<\/code> لا تساوي <code dir=\"ltr\">\"ABC\"<\/code>، ويُطبع Wrong."}, {"t": "for Loops", "q": "Which numbers are printed?", "c": "for i in range(4):\n    print(i)", "o": ["0 1 2 3", "0 1 2 3 4", "1 2 3 4", "1 2 3"], "a": 0, "e": "<code dir=\"ltr\">range(4)<\/code> تبدأ من 0 وتتوقف قبل 4، فتعطي 0، 1، 2، 3."}, {"t": "for Loops", "q": "How many times does this loop run?", "c": "for i in range(2, 9):\n    print(i)", "o": ["6", "9", "7", "8"], "a": 2, "e": "<code dir=\"ltr\">range(2, 9)<\/code> تعطي الأرقام من 2 إلى 8 (لا تشمل 9)، وعددها 9 − 2 = 7 مرات."}, {"t": "for Loops", "q": "Which numbers are printed?", "c": "for i in range(10, 0, -2):\n    print(i)", "o": ["10 8 6 4", "8 6 4 2 0", "10 8 6 4 2", "10 8 6 4 2 0"], "a": 2, "e": "تبدأ من 10 وتنقص 2 كل مرة، وتتوقف قبل الوصول إلى 0، فتعطي 10، 8، 6، 4، 2."}, {"t": "for Loops", "q": "What is printed?", "c": "total = 0\nfor i in range(1, 4):\n    total += i * i\nprint(total)", "o": ["9", "30", "14", "6"], "a": 2, "e": "قيم i هي 1، 2، 3. نجمع مربعاتها: 1 + 4 + 9 = 14."}, {"t": "for Loops", "q": "Which letters are printed?", "c": "for letter in \"cat\":\n    print(letter)", "o": ["c a t", "c", "Error", "cat"], "a": 0, "e": "الحلقة <code dir=\"ltr\">for<\/code> تمرّ على النص حرفاً حرفاً، فتطبع c ثم a ثم t، كل حرف في سطر."}, {"t": "for Loops", "q": "What is printed?", "c": "count = 0\nfor i in range(5):\n    count += 2\nprint(count)", "o": ["10", "8", "12", "5"], "a": 0, "e": "الحلقة تتكرر 5 مرات، وفي كل مرة نضيف 2، فيصبح المجموع 5 × 2 = 10."}, {"t": "for Loops", "q": "Which values does range(3) produce?", "c": "print(list(range(3)))", "o": ["[1, 2, 3]", "[0, 1, 2]", "[3]", "[0, 1, 2, 3]"], "a": 1, "e": "<code dir=\"ltr\">range(3)<\/code> تبدأ من 0 افتراضياً وتتوقف قبل 3، فتعطي 0، 1، 2."}, {"t": "for Loops", "q": "Which numbers are printed?", "c": "for i in range(1, 6):\n    if i == 4:\n        break\n    print(i)", "o": ["4 5", "1 2 3", "1 2 3 5", "1 2 3 4"], "a": 1, "e": "عندما تصبح <code dir=\"ltr\">i<\/code> تساوي 4 تُنفّذ <code dir=\"ltr\">break<\/code> فتنتهي الحلقة فوراً قبل طباعة 4."}, {"t": "for Loops", "q": "Which numbers are printed?", "c": "for i in range(1, 6):\n    if i % 2 == 1:\n        continue\n    print(i)", "o": ["1 3 5", "2 4", "2 4 6", "1 2 3 4 5"], "a": 1, "e": "<code dir=\"ltr\">continue<\/code> تتخطى الأرقام الفردية (التي باقي قسمتها على 2 يساوي 1)، فتُطبع الأرقام الزوجية فقط: 2 و 4."}, {"t": "for Loops", "q": "What is printed?", "c": "result = 1\nfor i in range(1, 5):\n    result = result * i\nprint(result)", "o": ["10", "120", "24", "4"], "a": 2, "e": "قيم i هي 1، 2، 3، 4، ونضربها: 1 × 2 × 3 × 4 = 24."}, {"t": "while Loops", "q": "What is printed?", "c": "n = 10\nwhile n > 0:\n    n = n - 3\nprint(n)", "o": ["-3", "-2", "1", "0"], "a": 1, "e": "قيم n: 10 ← 7 ← 4 ← 1 ← −2. عند −2 يصبح الشرط <code dir=\"ltr\">n &gt; 0<\/code> خطأ فتتوقف الحلقة وتُطبع −2."}, {"t": "while Loops", "q": "How many times is \"Hi\" printed?", "c": "i = 0\nwhile i < 6:\n    print(\"Hi\")\n    i += 2", "o": ["3", "6", "Infinite", "2"], "a": 0, "e": "قيم i داخل الحلقة: 0، 2، 4، ثم تصبح 6 فيتوقف الشرط. إذن تُطبع Hi ثلاث مرات."}, {"t": "while Loops", "q": "What is printed?", "c": "x = 1\nwhile x < 50:\n    x = x * 3\nprint(x)", "o": ["50", "27", "243", "81"], "a": 3, "e": "قيم x: 1 ← 3 ← 9 ← 27 ← 81. عند 81 يصبح الشرط <code dir=\"ltr\">x &lt; 50<\/code> خطأ فتتوقف الحلقة."}, {"t": "while Loops", "q": "What is the last number printed?", "c": "i = 5\nwhile i > 0:\n    print(i)\n    i -= 2", "o": ["-1", "2", "0", "1"], "a": 3, "e": "تُطبع القيم 5 ثم 3 ثم 1. بعدها تصبح i تساوي −1 فيتوقف الشرط. آخر رقم مطبوع هو 1."}, {"t": "while Loops", "q": "What is printed?", "c": "total = 0\nnum = 1\nwhile num <= 4:\n    total += num\n    num += 1\nprint(total)", "o": ["6", "15", "4", "10"], "a": 3, "e": "نجمع قيم num من 1 إلى 4: 1 + 2 + 3 + 4 = 10."}, {"t": "while Loops", "q": "What is printed?", "c": "count = 0\nwhile True:\n    count += 1\n    if count == 4:\n        break\nprint(count)", "o": ["5", "Infinite loop", "4", "3"], "a": 2, "e": "<code dir=\"ltr\">while True<\/code> حلقة لا نهائية، لكن <code dir=\"ltr\">break<\/code> تُنهيها عندما تصبح count تساوي 4."}, {"t": "while Loops", "q": "Which is the best choice when you do not know in advance how many times to repeat, for example \"keep asking until the user types quit\"?", "c": "", "o": ["if statement", "while loop", "def", "for loop with range()"], "a": 1, "e": "حلقة <code dir=\"ltr\">while<\/code> تتكرر ما دام الشرط صحيحاً، لذلك تناسب الحالات التي لا نعرف فيها عدد التكرارات مسبقاً."}, {"t": "while Loops", "q": "Which numbers are printed?", "c": "i = 0\nwhile i < 5:\n    i += 1\n    if i == 3:\n        continue\n    print(i)", "o": ["1 2 3 4 5", "0 1 2 4", "1 2", "1 2 4 5"], "a": 3, "e": "عندما تصبح i تساوي 3 تُنفّذ <code dir=\"ltr\">continue<\/code> فتتخطى الطباعة. لاحظ أن الزيادة تحدث قبل <code dir=\"ltr\">continue<\/code> فلا تحدث حلقة لا نهائية."}, {"t": "while Loops", "q": "What is printed?", "c": "x = 20\nwhile x > 5:\n    x = x // 2\nprint(x)", "o": ["5", "2", "0", "10"], "a": 0, "e": "قيم x: 20 ← 10 ← 5. عند 5 يصبح الشرط <code dir=\"ltr\">5 &gt; 5<\/code> خطأ فتتوقف الحلقة."}, {"t": "while Loops", "q": "What does break do inside a loop?", "c": "", "o": ["Exits the loop immediately", "Restarts the loop", "Skips to the next iteration", "Ends the whole program"], "a": 0, "e": "<code dir=\"ltr\">break<\/code> تُنهي الحلقة فوراً ويكمل البرنامج بعدها. أما تخطّي التكرار الحالي فهو عمل <code dir=\"ltr\">continue<\/code>."}, {"t": "Functions", "q": "Which keyword is used to define a function in Python?", "c": "", "o": ["def", "define", "function", "func"], "a": 0, "e": "نعرّف الدالة في Python بالكلمة <code dir=\"ltr\">def<\/code> متبوعة باسم الدالة والأقواس والنقطتين."}, {"t": "Functions", "q": "What is printed?", "c": "def show():\n    print(\"Hi\")\n\nprint(\"Start\")", "o": ["Hi Start", "Hi", "Start", "Nothing"], "a": 2, "e": "تعريف الدالة لا يُنفّذها. الدالة <code dir=\"ltr\">show<\/code> لم تُستدعَ، لذلك يُطبع Start فقط."}, {"t": "Functions", "q": "What is printed?", "c": "def add(a, b):\n    return a + b\n\nprint(add(2, 3) * 2)", "o": ["12", "5 2", "7", "10"], "a": 3, "e": "<code dir=\"ltr\">add(2, 3)<\/code> تُرجع 5، ثم 5 × 2 = 10."}, {"t": "Functions", "q": "What is printed?", "c": "def f(x):\n    x * 2\n\nprint(f(5))", "o": ["Error", "10", "5", "None"], "a": 3, "e": "الدالة تحسب <code dir=\"ltr\">x * 2<\/code> لكنها لا تحتوي على <code dir=\"ltr\">return<\/code>، فتُرجع <code dir=\"ltr\">None<\/code> تلقائياً."}, {"t": "Functions", "q": "What is printed?", "c": "def greet(name, msg):\n    print(msg, name)\n\ngreet(\"Ali\", \"Hi\")", "o": ["msg name", "Hi Ali", "Error", "Ali Hi"], "a": 1, "e": "المعاملات تُربط بالترتيب: <code dir=\"ltr\">name = \"Ali\"<\/code> و <code dir=\"ltr\">msg = \"Hi\"<\/code>. والدالة تطبع msg أولاً ثم name، فيظهر Hi Ali."}, {"t": "Functions", "q": "What is printed?", "c": "def area(w, h):\n    return w * h\n\nprint(area(3))", "o": ["Error", "3", "9", "0"], "a": 0, "e": "الدالة تحتاج وسيطين (w و h) لكننا أرسلنا وسيطاً واحداً فقط، فيظهر خطأ <code dir=\"ltr\">TypeError<\/code>. يجب أن يتطابق عدد الوسائط مع عدد المعاملات."}, {"t": "Functions", "q": "What is a \"fruitful\" function?", "c": "", "o": ["A function that only prints", "A function that returns a value", "A function inside a loop", "A function with no parameters"], "a": 1, "e": "الدالة المثمرة (fruitful) هي التي تُرجع قيمة باستخدام <code dir=\"ltr\">return<\/code>. أما التي لا تُرجع قيمة فتسمى void."}, {"t": "Functions", "q": "What is printed?", "c": "def check(n):\n    if n > 0:\n        return \"positive\"\n    return \"not positive\"\n\nprint(check(-3))", "o": ["positive", "not positive", "None", "-3"], "a": 1, "e": "الشرط <code dir=\"ltr\">-3 &gt; 0<\/code> خطأ، فلا تُنفّذ <code dir=\"ltr\">return<\/code> الأولى، وتُنفّذ الثانية فتُرجع not positive."}, {"t": "Functions", "q": "What is printed?", "c": "def test():\n    return 5\n    print(\"Done\")\n\nprint(test())", "o": ["5 Done", "5", "None", "Done"], "a": 1, "e": "<code dir=\"ltr\">return<\/code> تُنهي الدالة فوراً، لذلك السطر <code dir=\"ltr\">print(\"Done\")<\/code> لا يُنفّذ أبداً. يُطبع 5 فقط."}, {"t": "Functions", "q": "What is printed?", "c": "print(max([4, 9, 2]))", "o": ["9", "4", "15", "2"], "a": 0, "e": "الدالة الجاهزة <code dir=\"ltr\">max()<\/code> تُرجع أكبر قيمة في القائمة، وهي 9."}, {"t": "Functions", "q": "What is printed?", "c": "print(max(\"python\"))", "o": ["t", "n", "p", "y"], "a": 3, "e": "مع النصوص تُرجع <code dir=\"ltr\">max()<\/code> الحرف الأكبر أبجدياً. من بين حروف python الحرف y هو الأكبر."}, {"t": "Functions", "q": "What is printed?", "c": "def total(*nums):\n    return sum(nums)\n\nprint(total(1, 2, 3, 4))", "o": ["1", "Error", "4", "10"], "a": 3, "e": "<code dir=\"ltr\">*nums<\/code> تسمح بإرسال أي عدد من الوسائط، وتجمعها كلها. 1 + 2 + 3 + 4 = 10."}, {"t": "Functions", "q": "What is printed?", "c": "def info(**data):\n    print(data[\"city\"])\n\ninfo(name=\"Sara\", city=\"Jeddah\")", "o": ["city", "Sara", "Error", "Jeddah"], "a": 3, "e": "<code dir=\"ltr\">**data<\/code> تجمع الوسائط المسمّاة (keyword arguments). <code dir=\"ltr\">data[\"city\"]<\/code> تعطي القيمة المرتبطة بـ city وهي Jeddah."}, {"t": "Functions", "q": "What is printed?", "c": "def double(x):\n    return x * 2\n\nresult = double(double(3))\nprint(result)", "o": ["36", "12", "9", "6"], "a": 1, "e": "الاستدعاء الداخلي أولاً: <code dir=\"ltr\">double(3)<\/code> = 6، ثم <code dir=\"ltr\">double(6)<\/code> = 12."}, {"t": "Functions", "q": "Which of the following is NOT a built-in Python function?", "c": "", "o": ["calculate_total()", "input()", "len()", "type()"], "a": 0, "e": "<code dir=\"ltr\">len()<\/code> و <code dir=\"ltr\">input()<\/code> و <code dir=\"ltr\">type()<\/code> دوال جاهزة في Python. أما <code dir=\"ltr\">calculate_total()<\/code> فهي دالة يجب أن يعرّفها المبرمج بنفسه."}, {"t": "Scope & Recursion", "q": "What is printed?", "c": "x = 5\n\ndef f():\n    x = 100\n\nf()\nprint(x)", "o": ["5", "100", "105", "Error"], "a": 0, "e": "<code dir=\"ltr\">x = 100<\/code> داخل الدالة تُنشئ متغيراً محلياً جديداً، ولا تغيّر المتغير العام x الذي يبقى 5."}, {"t": "Scope & Recursion", "q": "What is printed?", "c": "def f():\n    print(y)\n\ny = 7\nf()", "o": ["None", "0", "7", "Error"], "a": 2, "e": "الدالة يمكنها قراءة المتغير العام y لأنه عُرّف قبل استدعاء الدالة."}, {"t": "Scope & Recursion", "q": "What is printed?", "c": "count = 0\n\ndef inc():\n    global count\n    count += 1\n\ninc()\ninc()\nprint(count)", "o": ["2", "1", "Error", "0"], "a": 0, "e": "الكلمة <code dir=\"ltr\">global<\/code> تسمح للدالة بتعديل المتغير العام. استدعينا الدالة مرتين فأصبحت count تساوي 2."}, {"t": "Scope & Recursion", "q": "What is printed?", "c": "x = 3\n\ndef show():\n    x = 9\n    print(\"in\", x)\n\nshow()\nprint(\"out\", x)", "o": ["in 3 out 3", "in 9 out 3", "in 3 out 9", "in 9 out 9"], "a": 1, "e": "داخل الدالة يُستخدم x المحلي (9)، وخارجها يُستخدم x العام (3). هما متغيران منفصلان."}, {"t": "Scope & Recursion", "q": "Which numbers are printed?", "c": "def countdown(n):\n    if n == 0:\n        return\n    print(n)\n    countdown(n - 1)\n\ncountdown(3)", "o": ["3 2 1 0", "3 2 1", "1 2 3", "3"], "a": 1, "e": "الدالة تطبع n ثم تستدعي نفسها بـ n − 1. عند n = 0 تتوقف (الحالة الأساسية) قبل الطباعة، فتُطبع 3، 2، 1."}, {"t": "Scope & Recursion", "q": "What is printed?", "c": "def total(n):\n    if n == 1:\n        return 1\n    return n + total(n - 1)\n\nprint(total(4))", "o": ["4", "10", "24", "Error"], "a": 1, "e": "<code dir=\"ltr\">total(4)<\/code> = 4 + 3 + 2 + 1 = 10. الحالة الأساسية هي n = 1."}, {"t": "Scope & Recursion", "q": "What happens if a recursive function has no base case?", "c": "", "o": ["It keeps calling itself until an error occurs", "It prints None", "It runs only once", "It returns 0"], "a": 0, "e": "بدون حالة أساسية (base case) لا يوجد شرط للتوقف، فتستدعي الدالة نفسها بلا نهاية حتى يظهر خطأ <code dir=\"ltr\">RecursionError<\/code>."}, {"t": "Lists", "q": "What is printed?", "c": "colors = [\"red\", \"green\", \"blue\"]\nprint(colors[0])", "o": ["green", "red", "blue", "Error"], "a": 1, "e": "الفهرسة في القوائم تبدأ من 0، فالعنصر الأول <code dir=\"ltr\">colors[0]<\/code> هو red."}, {"t": "Lists", "q": "What is printed?", "c": "colors = [\"red\", \"green\", \"blue\"]\nprint(colors[3])", "o": ["None", "red", "blue", "Error"], "a": 3, "e": "القائمة فيها 3 عناصر فهارسها 0، 1، 2 فقط. الفهرس 3 غير موجود فيظهر خطأ <code dir=\"ltr\">IndexError<\/code>."}, {"t": "Lists", "q": "What is printed?", "c": "nums = [4, 8, 15, 16, 23]\nprint(nums[2:])", "o": ["[15, 16]", "[8, 15, 16, 23]", "[15, 16, 23]", "[4, 8]"], "a": 2, "e": "<code dir=\"ltr\">nums[2:]<\/code> تبدأ من الفهرس 2 (القيمة 15) وتستمر حتى نهاية القائمة."}, {"t": "Lists", "q": "What is printed?", "c": "nums = [4, 8, 15, 16, 23]\nprint(nums[:2])", "o": ["[8, 15]", "[4, 8, 15]", "[4, 8]", "[4]"], "a": 2, "e": "<code dir=\"ltr\">nums[:2]<\/code> تبدأ من أول القائمة وتتوقف قبل الفهرس 2، فتعطي العنصرين في الفهرسين 0 و 1."}, {"t": "Lists", "q": "What is printed?", "c": "x = [1, 2, 3]\nx[0] = 9\nprint(x)", "o": ["Error", "[9, 1, 2, 3]", "[9, 2, 3]", "[1, 9, 3]"], "a": 2, "e": "القوائم قابلة للتعديل. <code dir=\"ltr\">x[0] = 9<\/code> تستبدل العنصر الأول بالقيمة 9 دون إضافة عنصر جديد."}, {"t": "Lists", "q": "What is printed?", "c": "x = [5, 10]\nx.append([15, 20])\nprint(len(x))", "o": ["4", "3", "Error", "2"], "a": 1, "e": "<code dir=\"ltr\">append()<\/code> تضيف عنصراً واحداً فقط، حتى لو كان قائمة. تصبح x = <code dir=\"ltr\">[5, 10, [15, 20]]<\/code> وطولها 3. لإضافة كل العناصر نستخدم <code dir=\"ltr\">extend()<\/code>."}, {"t": "Lists", "q": "What is printed?", "c": "x = [3, 6, 9]\nx.insert(1, 4)\nprint(x)", "o": ["[4, 3, 6, 9]", "[3, 6, 9, 4]", "[3, 6, 4, 9]", "[3, 4, 6, 9]"], "a": 3, "e": "<code dir=\"ltr\">insert(1, 4)<\/code> تضع القيمة 4 في الفهرس 1، وتُزاح العناصر بعدها خطوة لليمين."}, {"t": "Lists", "q": "What is printed?", "c": "x = [\"a\", \"b\", \"a\", \"c\"]\nx.remove(\"a\")\nprint(x)", "o": ["['b', 'a', 'c']", "['a', 'b', 'a']", "['b', 'c']", "['a', 'b', 'c']"], "a": 0, "e": "<code dir=\"ltr\">remove()<\/code> تحذف أول ظهور فقط للقيمة المحددة، فتبقى a الثانية في القائمة."}, {"t": "Lists", "q": "What is printed?", "c": "x = [10, 20, 30, 40]\ndel x[1]\nprint(x)", "o": ["[10, 30, 40]", "[10, 20, 40]", "[10, 20, 30]", "[20, 30, 40]"], "a": 0, "e": "<code dir=\"ltr\">del x[1]<\/code> تحذف العنصر في الفهرس 1، وهو 20."}, {"t": "Lists", "q": "What is printed?", "c": "print([1, 2] + [3])", "o": ["[[1, 2], [3]]", "[1, 2, 3]", "Error", "[4, 2]"], "a": 1, "e": "العامل <code dir=\"ltr\">+<\/code> بين قائمتين يدمجهما في قائمة جديدة واحدة."}, {"t": "Lists", "q": "What is printed?", "c": "print([0] * 3)", "o": ["[3]", "0", "[0]", "[0, 0, 0]"], "a": 3, "e": "العامل <code dir=\"ltr\">*<\/code> مع القائمة يكرر عناصرها. <code dir=\"ltr\">[0] * 3<\/code> تعطي ثلاثة أصفار."}, {"t": "Lists", "q": "What is printed?", "c": "fruits = [\"apple\", \"mango\"]\nprint(\"kiwi\" in fruits)", "o": ["kiwi", "True", "Error", "False"], "a": 3, "e": "العامل <code dir=\"ltr\">in<\/code> يتحقق من وجود القيمة في القائمة. kiwi غير موجودة فالنتيجة <code dir=\"ltr\">False<\/code>."}, {"t": "Lists", "q": "What is printed?", "c": "x = [7, 2, 9]\nprint(len(x) + sum(x))", "o": ["18", "Error", "21", "3"], "a": 2, "e": "<code dir=\"ltr\">len(x)<\/code> = 3 (عدد العناصر)، و <code dir=\"ltr\">sum(x)<\/code> = 7 + 2 + 9 = 18، والمجموع 3 + 18 = 21."}, {"t": "Lists", "q": "What is printed?", "c": "x = [3, 1, 2]\nx.sort()\nprint(x[0])", "o": ["2", "0", "3", "1"], "a": 3, "e": "<code dir=\"ltr\">sort()<\/code> ترتب القائمة تصاعدياً فتصبح <code dir=\"ltr\">[1, 2, 3]<\/code>، والعنصر الأول هو 1."}, {"t": "Lists", "q": "What is printed?", "c": "x = [5, 6, 7]\ny = x.pop(0)\nprint(y, x)", "o": ["5 [6, 7]", "7 [5, 6]", "0 [6, 7]", "5 [5, 6, 7]"], "a": 0, "e": "<code dir=\"ltr\">pop(0)<\/code> تحذف العنصر في الفهرس 0 وتُرجعه. y = 5 والقائمة تصبح <code dir=\"ltr\">[6, 7]<\/code>."}, {"t": "Lists", "q": "What is printed?", "c": "total = 0\nfor n in [2, 4, 6]:\n    total += n\nprint(total)", "o": ["246", "6", "3", "12"], "a": 3, "e": "الحلقة تمرّ على كل عنصر في القائمة وتضيفه إلى total: 2 + 4 + 6 = 12."}, {"t": "Lists", "q": "What is printed?", "c": "x = [1, 2, 3]\nprint(x.sum())", "o": ["Error", "3", "[1, 2, 3]", "6"], "a": 0, "e": "<code dir=\"ltr\">sum()<\/code> دالة جاهزة وليست method للقائمة، فالكتابة <code dir=\"ltr\">x.sum()<\/code> تعطي خطأ <code dir=\"ltr\">AttributeError<\/code>. الصحيح <code dir=\"ltr\">sum(x)<\/code>."}, {"t": "Lists", "q": "What is printed?", "c": "squares = [n ** 2 for n in range(1, 4)]\nprint(squares)", "o": ["[0, 1, 4]", "[1, 4, 9, 16]", "[2, 4, 6]", "[1, 4, 9]"], "a": 3, "e": "<code dir=\"ltr\">range(1, 4)<\/code> تعطي 1، 2، 3، ونحسب مربع كل منها: 1، 4، 9."}];
+const L = "ABCD";
+const KEY = "pyrev-answers-v1";
+let answers = {};
+try { answers = JSON.parse(localStorage.getItem(KEY) || "{}") || {}; } catch (e) { answers = {}; }
+const save = () => { try { localStorage.setItem(KEY, JSON.stringify(answers)); } catch (e) {} };
+
+const topics = [...new Set(Q.map(q => q.t))];
+let filter = "All";
+let cur = 0;
+const $ = id => document.getElementById(id);
+
+function visible() { return Q.map((q, i) => i).filter(i => filter === "All" || Q[i].t === filter); }
+
+function renderChips() {
+  const c = $("chips"); c.innerHTML = "";
+  ["All", ...topics].forEach(t => {
+    const b = document.createElement("button");
+    b.type = "button"; b.className = "chip"; b.textContent = t;
+    b.setAttribute("aria-pressed", t === filter);
+    b.onclick = () => { filter = t; const v = visible(); if (!v.includes(cur)) cur = v[0]; renderAll(); };
+    c.appendChild(b);
+  });
+}
+
+function renderQ() {
+  const q = Q[cur], v = visible(), k = v.indexOf(cur);
+  $("topic").textContent = q.t;
+  $("pos").textContent = `Question ${cur + 1} of 100` + (filter === "All" ? "" : ` · ${k + 1} of ${v.length} in topic`);
+  $("q").textContent = q.q;
+  $("code").textContent = q.c; $("code").hidden = !q.c;
+  const chosen = answers[cur];
+  const box = $("opts"); box.innerHTML = "";
+  q.o.forEach((o, i) => {
+    const b = document.createElement("button");
+    b.type = "button"; b.className = "opt";
+    b.innerHTML = `<span class="k">${L[i]}</span><span class="v"></span>`;
+    b.querySelector(".v").textContent = o;
+    if (chosen !== undefined) {
+      b.disabled = true;
+      if (i === q.a) b.classList.add("ok");
+      else if (i === chosen) b.classList.add("bad");
+    } else b.onclick = () => choose(i);
+    box.appendChild(b);
+  });
+  const fb = $("fb");
+  if (chosen === undefined) { fb.hidden = true; }
+  else {
+    const right = chosen === q.a;
+    fb.className = "fb " + (right ? "ok" : "bad");
+    fb.innerHTML = (right ? "<strong>إجابة صحيحة ✓</strong>" : `<strong>إجابة خاطئة ✗ — الإجابة الصحيحة هي <span dir="ltr">${L[q.a]}</span></strong>`) + q.e;
+    fb.hidden = false;
+  }
+  $("prev").disabled = k <= 0;
+  $("next").disabled = k >= v.length - 1;
+}
+
+function renderStats() {
+  const done = Object.keys(answers).length;
+  const ok = Object.entries(answers).filter(([i, a]) => Q[i].a === a).length;
+  $("sAns").textContent = done; $("sOk").textContent = ok;
+  $("sPct").textContent = done ? Math.round(ok / done * 100) + "%" : "–";
+  $("bar").style.width = done + "%";
+}
+
+function renderGrid() {
+  const g = $("grid"); g.innerHTML = "";
+  Q.forEach((q, i) => {
+    const b = document.createElement("button");
+    b.type = "button"; b.className = "cell"; b.textContent = i + 1;
+    b.setAttribute("aria-label", "Question " + (i + 1));
+    if (answers[i] !== undefined) b.classList.add(answers[i] === q.a ? "ok" : "bad");
+    if (i === cur) b.classList.add("cur");
+    if (filter !== "All" && q.t !== filter) b.classList.add("dim");
+    b.onclick = () => { if (filter !== "All" && q.t !== filter) { filter = "All"; renderChips(); } cur = i; renderQ(); renderGrid(); };
+    g.appendChild(b);
+  });
+}
+
+function renderAll() { renderChips(); renderQ(); renderGrid(); renderStats(); }
+
+function choose(i) {
+  if (answers[cur] !== undefined) return;
+  answers[cur] = i; save(); renderQ(); renderGrid(); renderStats();
+}
+
+function step(d) {
+  const v = visible(), k = v.indexOf(cur) + d;
+  if (k >= 0 && k < v.length) { cur = v[k]; renderQ(); renderGrid(); }
+}
+$("prev").onclick = () => step(-1);
+$("next").onclick = () => step(1);
+
+document.addEventListener("keydown", e => {
+  if (e.target.closest && e.target.closest("input,textarea")) return;
+  const m = { a: 0, b: 1, c: 2, d: 3, "1": 0, "2": 1, "3": 2, "4": 3 }[e.key.toLowerCase()];
+  if (m !== undefined && answers[cur] === undefined) choose(m);
+  else if (e.key === "ArrowRight") step(1);
+  else if (e.key === "ArrowLeft") step(-1);
+});
+
+function resetUI() {
+  const box = $("resetBox");
+  box.innerHTML = 'Clear all answers? <button class="linkbtn" id="yes" type="button">Yes, start over</button> · <button class="linkbtn" id="no" type="button">Cancel</button>';
+  $("yes").onclick = () => { answers = {}; save(); cur = visible()[0]; restore(); renderAll(); };
+  $("no").onclick = restore;
+}
+function restore() { $("resetBox").innerHTML = '<button class="linkbtn" id="reset" type="button">Start over</button>'; $("reset").onclick = resetUI; }
+$("reset").onclick = resetUI;
+
+const firstOpen = Q.findIndex((q, i) => answers[i] === undefined);
+cur = firstOpen === -1 ? 0 : firstOpen;
+renderAll();
+</script>
+
+</body>
+</html>
